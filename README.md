@@ -1,0 +1,2 @@
+# Trap_Frequency_Stablization
+实现数字PID离子阱频锁定的实验步骤和程序
