@@ -1,0 +1,97 @@
+set_property max_fanout 15 [get_cells -hierarchical -filter { NAME =~  "*USBI/hedrcv*" }]
+set_property max_fanout 15 [get_cells -hierarchical -filter { NAME =~  "*CTRL/exec*" }]
+set_property max_fanout 15 [get_cells -hierarchical -filter { NAME =~  "*CTRL/instr*" }]
+set_property max_fanout 15 [get_cells -hierarchical -filter { NAME =~  "*CTRL/nxt_ptr*" }]
+set_property max_fanout 15 [get_cells -hierarchical -filter { NAME =~  "*CTRL/pointer*" }]
+set_property max_fanout 15 [get_cells -hierarchical -filter { NAME =~  "*ALU/out*" }]
+set_property max_fanout 15 [get_cells -hierarchical -filter { NAME =~  "*DMEM/iREG_RMRA/out*" }]
+
+create_clock -period 20.000 -name xclk -waveform {0.000 10.000} [get_ports XCLK]
+# create_clock -period 5.000 -name clk -waveform {0.000 2.500} [get_ports SYSCLK_P]
+
+set _reg_instr [get_pins -hierarchical -filter { NAME =~  "*CTRL/instr*" }]
+set_multicycle_path -setup -end -from $_reg_instr 2
+set_multicycle_path -hold -end -from $_reg_instr 1
+
+set _reg_pointer [get_pins -hierarchical -filter { NAME =~  "*CTRL/pointer*" }]
+set_multicycle_path -setup -end -from $_reg_pointer -to $_reg_pointer 2
+set_multicycle_path -hold -end -from $_reg_pointer -to $_reg_pointer 1
+
+set _reg_stack [get_pins -hierarchical -filter { NAME =~  "*CTRL/stack*" }]
+set_multicycle_path -setup -end -from $_reg_stack 2
+set_multicycle_path -hold -end -from $_reg_stack 1
+
+set _gpreg_timer [get_pins -hierarchical -filter { NAME =~  "*TIME/iREG*" }]
+set_multicycle_path -setup -end -from $_gpreg_timer 2
+set_multicycle_path -hold -end -from $_gpreg_timer 1
+
+set _reg_nxtptr [get_pins -hierarchical -filter { NAME =~  "*CTRL/nxt_ptr*" }]
+set_multicycle_path -setup -end -to $_reg_nxtptr 2
+set_multicycle_path -hold -end -to $_reg_nxtptr 1
+
+set _out_alu [get_pins -hierarchical -filter { NAME =~  "*ALU/out*" }]
+set_multicycle_path -setup -end -to $_out_alu 2
+set_multicycle_path -hold -end -to $_out_alu 1
+
+set _bram_dmem [get_pins -hierarchical -filter { NAME =~  "*DMEM/BRAM*" }]
+set_multicycle_path -setup -end -from $_bram_dmem 3
+set_multicycle_path -hold -end -from $_bram_dmem 2
+
+set _gpreg_alu [get_pins -hierarchical -filter { NAME =~  "*iREG_AOP*" }]
+set_multicycle_path -setup -end -from $_gpreg_alu 8
+set_multicycle_path -hold -end -from $_gpreg_alu 7
+
+# -----------------------------
+
+create_clock -period 5.000 -name v_oclk_usb -waveform {0.000 2.500}
+set_clock_latency -min 2.0 [get_clocks v_oclk_usb]
+set_clock_latency -max 1.0 [get_clocks v_oclk_usb]
+
+create_clock -period 5.000 -name v_oclk_dac -waveform {0.000 2.500}
+set_clock_latency -min 1.9 [get_clocks v_oclk_dac]
+set_clock_latency -max 1.8 [get_clocks v_oclk_dac]
+
+create_clock -period 5.000 -name v_oclk_spi -waveform {0.000 2.500}
+set_clock_latency -min 2.1 [get_clocks v_oclk_spi]
+set_clock_latency -max 2.1 [get_clocks v_oclk_spi]
+
+create_clock -period 5.000 -name v_oclk_spi_dut -waveform {0.000 2.500}
+set_clock_latency -min 2.4 [get_clocks v_oclk_spi_dut]
+set_clock_latency -max 2.1 [get_clocks v_oclk_spi_dut]
+
+create_clock -period 5.000 -name v_oclk_rst -waveform {0.000 2.500}
+set_clock_latency -min 1.0 [get_clocks v_oclk_rst]
+set_clock_latency -max 1.7 [get_clocks v_oclk_rst]
+
+create_clock -period 5.000 -name v_iclk -waveform {0.000 2.500}
+set_clock_latency -min -2.3 [get_clocks v_iclk]
+set_clock_latency -max -2.0 [get_clocks v_iclk]
+
+set_input_delay 0 -clock v_iclk [get_ports {AD0_DAT[*]}]
+set_input_delay 0 -clock v_iclk [get_ports {AD0_SMP}]
+
+set_input_delay 0 -clock v_iclk [get_ports {AD1_DAT[*]}]
+set_input_delay 0 -clock v_iclk [get_ports {AD1_SMP}]
+
+set_input_delay 0 -clock v_iclk [get_ports {FT_AD[*]}]
+set_input_delay 0 -clock v_iclk [get_ports {FT_AC[0]}]
+set_input_delay 0 -clock v_iclk [get_ports {FT_AC[1]}]
+
+set_output_delay 0 -clock v_oclk_usb [get_ports {FT_AD[*]}]
+set_output_delay 0 -clock v_oclk_usb [get_ports {FT_AC[2]}]
+set_output_delay 0 -clock v_oclk_usb [get_ports {FT_AC[3]}]
+
+set_output_delay 0 -clock v_oclk_dac [get_ports {DA0_DAT[*]}]
+set_output_delay 0 -clock v_oclk_dac [get_ports {DA0_SMP}]
+
+set_output_delay 0 -clock v_oclk_dac [get_ports {DA1_DAT[*]}]
+set_output_delay 0 -clock v_oclk_dac [get_ports {DA1_SMP}]
+
+set_output_delay 0 -clock v_oclk_spi [get_ports {DS0_SPI[*]}]
+
+set_output_delay 0 -clock v_oclk_spi [get_ports {DS1_SPI[*]}]
+
+set_output_delay 0 -clock v_oclk_spi_dut [get_ports {IO_J21[5]}]
+set_output_delay 0 -clock v_oclk_spi_dut [get_ports {IO_J21[4]}]
+set_output_delay 0 -clock v_oclk_spi_dut [get_ports {IO_J21[2]}]
+set_output_delay 0 -clock v_oclk_spi_dut [get_ports {IO_J21[1]}]
